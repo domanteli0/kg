@@ -1,5 +1,9 @@
 import _ from 'lodash';
 
+const sleep = ({forTime, andThen}) => {
+  setTimeout(andThen, forTime);
+}
+
 const canvas = document.getElementById('canvas');
 const width = canvas.getAttribute('width');
 const height = canvas.getAttribute('height');
@@ -20,8 +24,6 @@ ctx.fillRect(0, height - 10, 10, 10); // Bottom-left
 ctx.fillRect(width - 10, height - 10, 10, 10); // Bottom-right
 ctx.fillRect(width - 10, 0, 10, 10); // Top-right
 
-const depthLimit = 1;
-
 const renderBlock = (x, y, l) => {
   const length = l / blockSize;
 
@@ -39,18 +41,18 @@ const transformBlock = () => {}; // TODO
 
 renderBlock(0, 0, 512);
 
-_.range(1, depthLimit).forEach(async (depth) => {
-  console.log('ahsd');
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+const depthLimit = 5;
 
-  // range(0, depth).forEach((ix) => {
-  //   range(0, dx).forEach((jx) => {
+_.range(1, depthLimit + 1).forEach((depth) => {
+  sleep({
+    forTime: 1000 * depth,
+    andThen: () => {
+      console.log(`depth: ${depth}`);
+      ctx.clearRect(0, 0, width, height);
 
-  //     renderBlock(0, 0, 512 / );
-  //   })
-  // })
+      renderBlock(0, 0, 512 / depth);
 
-  console.log('done rendering');
-
-  await new Promise(r => setTimeout(r, 1000));
+      console.log('done rendering');
+    }
+  })
 });

@@ -1,7 +1,6 @@
 {
   "dependencies": {
     "lodash": "^4.17.21",
-    "lodash-es": "^4.17.21",
     "three": "^0.168.0"
   },
   "devDependencies": {
