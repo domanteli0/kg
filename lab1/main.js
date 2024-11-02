@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import { pow2 } from 'three/webgpu';
 
 const sleep = ({forTime, andThen}) => {
   setTimeout(andThen, forTime);
@@ -19,14 +20,15 @@ const block = [
 ];
 const blockSize = block.length;
 
-ctx.fillRect(0, 0, 10, 10); // Top-left
-ctx.fillRect(0, height - 10, 10, 10); // Bottom-left
-ctx.fillRect(width - 10, height - 10, 10, 10); // Bottom-right
-ctx.fillRect(width - 10, 0, 10, 10); // Top-right
+// ctx.fillRect(0, 0, 10, 10); // Top-left
+// ctx.fillRect(0, height - 10, 10, 10); // Bottom-left
+// ctx.fillRect(width - 10, height - 10, 10, 10); // Bottom-right
+// ctx.fillRect(width - 10, 0, 10, 10); // Top-right
 
 const renderBlock = (x, y, l) => {
   const length = l / blockSize;
 
+  ctx.beginPath();
   block.forEach((line, ix) => {
     line.forEach((mask, jx) => {
       if (mask != 1) { return; }
@@ -35,24 +37,19 @@ const renderBlock = (x, y, l) => {
       ctx.fill();
     });
   })
+  ctx.closePath();
 };
 
 const transformBlock = () => {}; // TODO
 
 renderBlock(0, 0, 512);
 
-const depthLimit = 5;
+const depthLimit = 1;
+const depth = depthLimit;
 
-_.range(1, depthLimit + 1).forEach((depth) => {
-  sleep({
-    forTime: 1000 * depth,
-    andThen: () => {
-      console.log(`depth: ${depth}`);
-      ctx.clearRect(0, 0, width, height);
+console.log(`depth: ${depth}`);
+ctx.clearRect(0, 0, width, height);
 
-      renderBlock(0, 0, 512 / depth);
+renderBlock(0, 0, 512 / (2**depth));
 
-      console.log('done rendering');
-    }
-  })
-});
+console.log('done rendering');
