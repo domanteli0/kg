@@ -1,11 +1,14 @@
 import * as THREE from "three";
-import picture from "/textures/grid_medium.png";
-// import picture from "/textures/cat.png";
+// import picture from "/textures/grid_medium.png";
+import picture from "/textures/earth.jpg";
+import { addRotate } from "./add_rotate";
 
 const textureLoader = new THREE.TextureLoader();
 const texture = textureLoader.load(picture);
 
-// Vertex shader (example.vert)
+let theta = 0;
+let phi = 0;
+
 const vertexShader = `
       varying vec2 vUv;
       void main() {
@@ -15,60 +18,47 @@ const vertexShader = `
       }
     `;
 
-// Fragment shader (example.frag)
 const fragmentShader = `
-      uniform sampler2D u_texture;
+      uniform sampler2D texture_2d;
       uniform float u_time;
+      uniform vec2 u_clickUv;
       varying vec2 vUv;
 
-      void main() {
-        float u_zoom = 1.;
-        vec2 uv = vUv;
-        // gl_FragColor = vec4(0., vUv.xy / 2., 1.0);
+      #define PI 3.1415926535897932384626433832795
+      uniform float barrel_power;
 
-        vec2 click_pos = vec2(0.5, 0.5); // <- Šitą vėliau reikės pakeist į actual click'o koordinates
-        vec2 u_clickUv = click_pos;
-        vec3 circle = vec3(click_pos, 0.25);
-        float d = length(vUv - circle.xy) - circle.z;
+      vec2 distort(vec2 p)
+      {
+          float theta  = atan(p.y, p.x);
+          float radius = length(p);
+          radius = pow(radius, barrel_power);
+          p.x = radius * cos(theta);
+          p.y = radius * sin(theta);
+          return 0.5 * (p + 1.0);
+      }
 
-        // float frag_zoom = d/(.5 + exp(2.0 * d));
+      #define SCALING_FACTOR 4.0
 
-        float frag_zoom = d/(10.0 + exp(5.0 * d));
-        // vec2 vUv = vec2(vUv.x + frag_zoom, vUv.y + frag_zoom);
-        // vUv = mod(vUv, 1.0); // Wrap UVs in [0,1]
-        // vec2 offsetUV = vUv;
-        // vec2 offsetUV = vUv + (1. / (lenght(click_pos - vUv) + .000000001) );
+      void main()
+      {
+        float x = SCALING_FACTOR * vUv.x - 0.;
+        float y = SCALING_FACTOR * vUv.y - 1.;
+        vec2 xy = vec2(x, y);
+        vec2 uv;
+        float d = length(xy);
 
-        float thing = (1. - smoothstep(0., 1., length( (click_pos - vUv) / .25))) / 10.;
-        // vec4 texColor = vec4(thing, thing, .0, 1.);
+        float x2 = 4.0 * vUv.x - 4.;
+        float y2 = 4.0 * vUv.y - 1.;
+        vec2 xy2 = vec2(x2, y2);
+        float d2 = length(xy2);
 
-        float x_dir = 0.;
-        float y_dir = 0.;
+        if      (d < 1.)  { uv = distort(xy); }
+        else if (d2 < 1.) { uv = distort(xy2); }
+        else              { uv = vUv.xy; }
 
-        x_dir = (uv.x < click_pos.x) ? -1. : 1.; // čia biški neteisingas skaičiavimas, kai uv == click_pos
-        y_dir = (uv.y < click_pos.y) ? -1. : 1.; // čia biški neteisingas skaičiavimas, kai uv == click_pos
-
-        vec2 offsetUV = vec2(
-          uv.x + thing * x_dir,
-          uv.y + thing * y_dir
-        );
-
-        // [ GLOBE-ZOOM ]
-        vec2 ray = normalize(u_clickUv - vUv);
-
-        frag_zoom = d/(.5 + exp(2.0 * d));
-
-        uv = vUv + normalize(ray) * u_zoom * frag_zoom;
-
-        uv = mod(uv, 1.0); // Wrap UVs in [0,1]
-
-        offsetUV = uv;
-        // [ GLOBE-ZOOM ]
-
-        vec4 texColor = texture2D(u_texture, offsetUV);
-        // vec4 texColor = vec4(, 0., 0., 1.);
-
-        gl_FragColor = texColor;
+        vec4 c = texture2D(texture_2d, uv);
+        // c = texture2D(texture_2d, vUv);
+        gl_FragColor = c;
       }
     `;
 
@@ -93,8 +83,10 @@ const create_plane = (x, y) => {
   const geometry = new THREE.PlaneGeometry(1);
   const material = new THREE.ShaderMaterial({
     uniforms: {
-      u_texture: { value: texture },
+      texture_2d: { value: texture },
       u_time: { value: 0 },
+      u_clickUv: { value: new THREE.Vector2(0.55, 0.55) },
+      barrel_power: { value: 1.5 },
     },
     vertexShader: vertexShader,
     fragmentShader: fragmentShader,
@@ -107,15 +99,32 @@ const create_plane = (x, y) => {
   scene.add(plane);
 };
 
-create_plane(-1, -1);
-create_plane(-1, 0);
-create_plane(-1, 1);
-create_plane(0, -1);
-create_plane(0, 0);
-create_plane(0, 1);
-create_plane(1, -1);
-create_plane(1, 0);
-create_plane(1, 1);
+// create_plane(-1, -1);
+// create_plane(-1, 0);
+// create_plane(-1, 1);
+// create_plane(0, -1);
+// create_plane(0, 0);
+// create_plane(0, 1);
+// create_plane(1, -1);
+// create_plane(1, 0);
+// create_plane(1, 1);
+
+const geometry = new THREE.SphereGeometry(0.75, 32, 32);
+const material = new THREE.ShaderMaterial({
+  uniforms: {
+    texture_2d: { value: texture },
+    u_time: { value: 0 },
+    u_clickUv: { value: new THREE.Vector2(0.55, 0.55) },
+    barrel_power: { value: 1.5 },
+  },
+  vertexShader: vertexShader,
+  fragmentShader: fragmentShader,
+});
+
+let sphere = new THREE.Mesh(geometry, material);
+scene.add(sphere);
+
+addRotate({ forObject: sphere });
 
 // Render loop
 function animate() {
