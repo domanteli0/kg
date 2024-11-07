@@ -2,7 +2,6 @@ export const addRotate = (params) => {
   let object = params.forObject;
 
   const onKeyDown = (event) => {
-    console.log(event.key);
     switch (event.key) {
       case "ArrowLeft":
         // Left pressed

@@ -58,65 +58,71 @@ const fragmentShader = `
         return acos(dot(p, q));
       }
 
+      vec3 rotateY(vec3 point, float angle) {
+          float cosAngle = cos(angle);
+          float sinAngle = sin(angle);
+          mat3 rotationMatrix = mat3(
+              cosAngle, 0.0, sinAngle,
+              0.0, 1.0, 0.0,
+              -sinAngle, 0.0, cosAngle
+          );
+          return rotationMatrix * point;
+      }
+
+      vec3 rotateX(vec3 point, float angle) {
+          float cosAngle = cos(angle);
+          float sinAngle = sin(angle);
+
+          mat3 rotationMatrix = mat3(
+              1.0, 0.0, 0.0,
+              0.0, cosAngle, -sinAngle,
+              0.0, sinAngle, cosAngle
+          );
+
+          return rotationMatrix * point;
+      }
+
       void main()
       {
         vec2 uv = vUv;
-        const float ZOOM_POWER = 10.;
-        const float CIRCLE_RADIUS = 0.25;
-        const vec2 CIRCLE_1_POS = vec2(.5); // TODO: čia yra u_clickUv
 
-        // vec2 circle_1_center = vec2(CIRCLE_1_POS);
-        // vec2 dir_1 = circle_1_center - vUv;
-        // dir_1 *= -1.;
-        // float d_1 = sphericalDistance(circle_1_center, vUv);
-
-        // if (d_1 < CIRCLE_RADIUS) {
-        //   float _d = (CIRCLE_RADIUS - d_1);
-        //   uv = vUv - dir_1 * _d * ZOOM_POWER;
-        // }
+        const float ZOOM_POWER = 3.;
+        const float ELLIPSE_RADIUS = 0.1;
+        vec2 ELLIPSE_CENTER_POS = vec2(0.5); // i.e. u_clickUv
 
         vec3 uv3 = uvToSphere(uv);
+        vec3 ELLIPSE_CENTER_POS_3 = uvToSphere(ELLIPSE_CENTER_POS);
+
+        const vec2 ROTATION = vec2(2., 2.);
+
+        uv3 = rotateX(uv3, ROTATION.x);
+        uv3 = rotateY(uv3, ROTATION.y);
+        ELLIPSE_CENTER_POS_3 = rotateX(ELLIPSE_CENTER_POS_3, ROTATION.x);
+        ELLIPSE_CENTER_POS_3 = rotateY(ELLIPSE_CENTER_POS_3, ROTATION.y);
+
         uv = sphereToUv(uv3);
+        ELLIPSE_CENTER_POS = sphereToUv(ELLIPSE_CENTER_POS_3);
+
+        // čia elipsės sdf'as, i think...
+        vec2 coord = (uv - ELLIPSE_CENTER_POS) / vec2(ELLIPSE_RADIUS / 2., ELLIPSE_RADIUS);
+        float d = dot(coord, coord);
+        vec2 dir = uv - ELLIPSE_CENTER_POS;
 
         vec4 colour = texture2D(texture_2d, uv);
-        // vec3 c = vec3(d_1, 0., 0.);
-        // colour = vec4(c, 1.);
+        if (d <= 1.) {
+          // float _d = (ELLIPSE_RADIUS - d); //* 5.*sin(.35 / d);
+          // vec2 offset = dir * _d * .1;
+          // // uv.x = uv.x - offset.x / 2.;
+          // // uv.y = uv.y - offset.y;
+          // // colour = vec4(1., 1., 0., 1.);
+          // uv = uv + offset;
+          // colour = texture(texture_2d, uv);
+
+          // colour = vec4(1., 1., 0., 1.);
+        }
+
         gl_FragColor = colour;
-      }
-      // void main()
-      // {
-      //   vec2 uv = vUv;
-      //   const float ZOOM_POWER = 0.5;
-      //   const float CIRCLE_RADIUS = 0.25;
-      //   const vec2 CIRCLE_1_POS = vec2(.5);
-
-      //   // Convert UV positions to 3D sphere positions
-      //   vec3 p_center = uvToSphere(CIRCLE_1_POS);
-      //   vec3 p_uv = uvToSphere(vUv);
-
-      //   // Calculate the direction on the sphere's surface
-      //   vec3 dir_1 = p_center - p_uv;
-
-      //   // Get the spherical distance between the two UV points
-      //   float d_1 = sphericalDistance(CIRCLE_1_POS, vUv);
-
-      //   // // Apply zoom effect if within the circle radius
-      //   // if (d_1 < CIRCLE_RADIUS) {
-      //   //   float _d = (CIRCLE_RADIUS - d_1);
-      //   //   // Project the 3D direction back to UV space
-      //   //   vec3 displacedPoint = p_uv + dir_1 * _d * ZOOM_POWER;
-
-      //   //   // Inverse transform to UV space
-      //   //   float theta = acos(displacedPoint.z); // angle from the z-axis
-      //   //   float phi = atan(displacedPoint.y, displacedPoint.x); // angle around the z-axis
-      //   //   uv.x = phi / (2. * PI);
-      //   //   uv.y = theta / PI;
-      //   // }
-
-      //   vec4 colour = texture2D(texture_2d, uv);
-      //   gl_FragColor = colour;
-      // }
-    `;
+      }`;
 
 // Set up scene, camera, and renderer
 const scene = new THREE.Scene();
@@ -178,6 +184,8 @@ const material = new THREE.ShaderMaterial({
 let sphere = new THREE.Mesh(geometry, material);
 scene.add(sphere);
 addRotate({ forObject: sphere });
+
+sphere.rotateY(-Math.PI / 2);
 
 // Render loop
 function animate() {
