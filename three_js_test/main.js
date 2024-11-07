@@ -58,64 +58,27 @@ const fragmentShader = `
         return acos(dot(p, q));
       }
 
-      void main()
-      {
+      void main() {
         vec2 uv = vUv;
-        const float ZOOM_POWER = 10.;
-        const float CIRCLE_RADIUS = 0.25;
-        const vec2 CIRCLE_1_POS = vec2(.5); // TODO: čia yra u_clickUv
+        const float ZOOM_POWER = 2.;
+        const float CIRCLE_RADIUS = 0.4;
+        const vec2 CIRCLE_1_POS = vec2(.55);
 
-        // vec2 circle_1_center = vec2(CIRCLE_1_POS);
-        // vec2 dir_1 = circle_1_center - vUv;
-        // dir_1 *= -1.;
-        // float d_1 = sphericalDistance(circle_1_center, vUv);
+        vec2 circle_1_center = vec2(CIRCLE_1_POS);
+        vec2 dir_1 = circle_1_center - vUv;
+        dir_1 *= -1.;
+        float d_1 = sphericalDistance(circle_1_center, vUv);
 
-        // if (d_1 < CIRCLE_RADIUS) {
-        //   float _d = (CIRCLE_RADIUS - d_1);
-        //   uv = vUv - dir_1 * _d * ZOOM_POWER;
-        // }
-
-        vec3 uv3 = uvToSphere(uv);
-        uv = sphereToUv(uv3);
+        if (d_1 < CIRCLE_RADIUS) {
+          float _d = (CIRCLE_RADIUS - d_1); //* 5.*sin(.35 / d);
+          uv = vUv - dir_1 * _d * ZOOM_POWER;
+        }
 
         vec4 colour = texture2D(texture_2d, uv);
         // vec3 c = vec3(d_1, 0., 0.);
         // colour = vec4(c, 1.);
         gl_FragColor = colour;
       }
-      // void main()
-      // {
-      //   vec2 uv = vUv;
-      //   const float ZOOM_POWER = 0.5;
-      //   const float CIRCLE_RADIUS = 0.25;
-      //   const vec2 CIRCLE_1_POS = vec2(.5);
-
-      //   // Convert UV positions to 3D sphere positions
-      //   vec3 p_center = uvToSphere(CIRCLE_1_POS);
-      //   vec3 p_uv = uvToSphere(vUv);
-
-      //   // Calculate the direction on the sphere's surface
-      //   vec3 dir_1 = p_center - p_uv;
-
-      //   // Get the spherical distance between the two UV points
-      //   float d_1 = sphericalDistance(CIRCLE_1_POS, vUv);
-
-      //   // // Apply zoom effect if within the circle radius
-      //   // if (d_1 < CIRCLE_RADIUS) {
-      //   //   float _d = (CIRCLE_RADIUS - d_1);
-      //   //   // Project the 3D direction back to UV space
-      //   //   vec3 displacedPoint = p_uv + dir_1 * _d * ZOOM_POWER;
-
-      //   //   // Inverse transform to UV space
-      //   //   float theta = acos(displacedPoint.z); // angle from the z-axis
-      //   //   float phi = atan(displacedPoint.y, displacedPoint.x); // angle around the z-axis
-      //   //   uv.x = phi / (2. * PI);
-      //   //   uv.y = theta / PI;
-      //   // }
-
-      //   vec4 colour = texture2D(texture_2d, uv);
-      //   gl_FragColor = colour;
-      // }
     `;
 
 // Set up scene, camera, and renderer
@@ -178,6 +141,8 @@ const material = new THREE.ShaderMaterial({
 let sphere = new THREE.Mesh(geometry, material);
 scene.add(sphere);
 addRotate({ forObject: sphere });
+
+sphere.rotateY(-Math.PI / 2);
 
 // Render loop
 function animate() {
