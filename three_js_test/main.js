@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { addRotate } from "./add_rotate";
 
-// import picture from "/textures/grid_medium.png";
+// import picture from "/textures/grid_tiny.png";
 import picture from "/textures/earth.jpg";
 
 const textureLoader = new THREE.TextureLoader();
@@ -69,6 +69,21 @@ const fragmentShader = `
           return rotationMatrix * point;
       }
 
+      vec3 rotateZ(vec3 point, float angle) {
+          float cosAngle = cos(angle);
+          float sinAngle = sin(angle);
+
+          // Rotation matrix around the Z-axis
+          mat3 rotationMatrix = mat3(
+              cosAngle, -sinAngle, 0.0,
+              sinAngle, cosAngle,  0.0,
+              0.0,      0.0,       1.0
+          );
+
+          // Apply the rotation matrix to the point
+          return rotationMatrix * point;
+      }
+
       vec3 rotateX(vec3 point, float angle) {
           float cosAngle = cos(angle);
           float sinAngle = sin(angle);
@@ -85,42 +100,39 @@ const fragmentShader = `
       void main()
       {
         vec2 uv = vUv;
-
-        const float ZOOM_POWER = 3.;
-        const float ELLIPSE_RADIUS = 0.1;
-        vec2 ELLIPSE_CENTER_POS = vec2(0.5); // i.e. u_clickUv
+        const float ZOOM_POWER = 2.;
+        const float CIRCLE_RADIUS = 0.4;
+        vec2 CIRCLE_CENTER_POS = vec2(0.5);
 
         vec3 uv3 = uvToSphere(uv);
-        vec3 ELLIPSE_CENTER_POS_3 = uvToSphere(ELLIPSE_CENTER_POS);
+        vec3 CIRCLE_CENTER_POS_3 = uvToSphere(CIRCLE_CENTER_POS);
 
-        const vec2 ROTATION = vec2(2., 2.);
+        // const vec3 ROTATION = vec3(0.0, 1.4, -1.);
+        const vec3 ROTATION = vec3(0.0, 0., -1.);
 
         uv3 = rotateX(uv3, ROTATION.x);
         uv3 = rotateY(uv3, ROTATION.y);
-        ELLIPSE_CENTER_POS_3 = rotateX(ELLIPSE_CENTER_POS_3, ROTATION.x);
-        ELLIPSE_CENTER_POS_3 = rotateY(ELLIPSE_CENTER_POS_3, ROTATION.y);
+        uv3 = rotateZ(uv3, ROTATION.z);
+        CIRCLE_CENTER_POS_3 = rotateX(CIRCLE_CENTER_POS_3, ROTATION.x);
+        CIRCLE_CENTER_POS_3 = rotateY(CIRCLE_CENTER_POS_3, ROTATION.y);
+        CIRCLE_CENTER_POS_3 = rotateZ(CIRCLE_CENTER_POS_3, ROTATION.z);
 
         uv = sphereToUv(uv3);
-        ELLIPSE_CENTER_POS = sphereToUv(ELLIPSE_CENTER_POS_3);
+        CIRCLE_CENTER_POS = sphereToUv(CIRCLE_CENTER_POS_3);
 
-        // čia elipsės sdf'as, i think...
-        vec2 coord = (uv - ELLIPSE_CENTER_POS) / vec2(ELLIPSE_RADIUS / 2., ELLIPSE_RADIUS);
-        float d = dot(coord, coord);
-        vec2 dir = uv - ELLIPSE_CENTER_POS;
+        vec2 dir_1 = CIRCLE_CENTER_POS - uv;
+        dir_1 *= -1.;
+        float d_1 = sphericalDistance(CIRCLE_CENTER_POS, uv);
 
-        vec4 colour = texture2D(texture_2d, uv);
-        if (d <= 1.) {
-          // float _d = (ELLIPSE_RADIUS - d); //* 5.*sin(.35 / d);
-          // vec2 offset = dir * _d * .1;
-          // // uv.x = uv.x - offset.x / 2.;
-          // // uv.y = uv.y - offset.y;
-          // // colour = vec4(1., 1., 0., 1.);
-          // uv = uv + offset;
-          // colour = texture(texture_2d, uv);
-
+        if (d_1 < CIRCLE_RADIUS) {
+          float _d = (CIRCLE_RADIUS - d_1); //* 5.*sin(.35 / d);
+          uv = uv - dir_1 * _d * ZOOM_POWER;
           // colour = vec4(1., 1., 0., 1.);
         }
 
+        vec4 colour = texture2D(texture_2d, uv);
+        // vec3 c = vec3(d_1, 0., 0.);
+        // colour = vec4(c, 1.);
         gl_FragColor = colour;
       }`;
 
