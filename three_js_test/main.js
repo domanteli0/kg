@@ -114,6 +114,11 @@ const fragmentShader = `
       void main()
       {
         vec2 uv = vUv;
+
+        vec2 xy = 2.0 * uv - 1.0;
+        float d = length(xy);
+        if (d < 1.0) { uv = Distort(xy); }
+
         const float ZOOM_POWER = 2.;
         const float CIRCLE_RADIUS = 0.4;
         vec2 CIRCLE_CENTER_POS = vec2(0.5);
@@ -121,8 +126,8 @@ const fragmentShader = `
         vec3 uv3 = uvToSphere(uv);
         vec3 CIRCLE_CENTER_POS_3 = uvToSphere(CIRCLE_CENTER_POS);
 
-        // const vec3 ROTATION = vec3(0.0, PI / 2., 0.);
-        const vec3 ROTATION = vec3(0.0, 0., 0.);
+        const vec3 ROTATION = vec3(0.0, PI / 3., PI + PI / 8.);
+        // const vec3 ROTATION = vec3(0.0, 0., 0.);
 
         uv3 = rotateX(uv3, ROTATION.x);
         uv3 = rotateY(uv3, ROTATION.y);
@@ -132,11 +137,6 @@ const fragmentShader = `
         CIRCLE_CENTER_POS_3 = rotateZ(CIRCLE_CENTER_POS_3, ROTATION.z);
 
         uv = sphereToUv(uv3);
-        CIRCLE_CENTER_POS = sphereToUv(CIRCLE_CENTER_POS_3);
-
-        vec2 xy = 2.0 * uv - 1.0;
-        float d = length(xy);
-        if (d < 1.0) { uv = Distort(xy); }
 
         vec4 colour = texture2D(texture_2d, uv);
         gl_FragColor = colour;
