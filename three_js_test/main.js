@@ -25,6 +25,10 @@ const fragmentShader = `
       uniform vec2 u_clickUv;
       varying vec2 vUv;
 
+      const float PI = 3.1415926535;
+      // uniform float BarrelPower;
+      const float BarrelPower = 1.5;
+
       #define PI 3.1415926535897932384626433832795
 
       vec3 uvToSphere(vec2 uv) {
@@ -97,6 +101,16 @@ const fragmentShader = `
           return rotationMatrix * point;
       }
 
+      vec2 Distort(vec2 p)
+      {
+          float theta  = atan(p.y, p.x);
+          float radius = length(p);
+          radius = pow(radius, BarrelPower);
+          p.x = radius * cos(theta);
+          p.y = radius * sin(theta);
+          return 0.5 * (p + 1.);
+      }
+
       void main()
       {
         vec2 uv = vUv;
@@ -107,8 +121,8 @@ const fragmentShader = `
         vec3 uv3 = uvToSphere(uv);
         vec3 CIRCLE_CENTER_POS_3 = uvToSphere(CIRCLE_CENTER_POS);
 
-        // const vec3 ROTATION = vec3(0.0, 1.4, -1.);
-        const vec3 ROTATION = vec3(0.0, 0., -1.);
+        // const vec3 ROTATION = vec3(0.0, PI / 2., 0.);
+        const vec3 ROTATION = vec3(0.0, 0., 0.);
 
         uv3 = rotateX(uv3, ROTATION.x);
         uv3 = rotateY(uv3, ROTATION.y);
@@ -120,19 +134,11 @@ const fragmentShader = `
         uv = sphereToUv(uv3);
         CIRCLE_CENTER_POS = sphereToUv(CIRCLE_CENTER_POS_3);
 
-        vec2 dir_1 = CIRCLE_CENTER_POS - uv;
-        dir_1 *= -1.;
-        float d_1 = sphericalDistance(CIRCLE_CENTER_POS, uv);
-
-        if (d_1 < CIRCLE_RADIUS) {
-          float _d = (CIRCLE_RADIUS - d_1); //* 5.*sin(.35 / d);
-          uv = uv - dir_1 * _d * ZOOM_POWER;
-          // colour = vec4(1., 1., 0., 1.);
-        }
+        vec2 xy = 2.0 * uv - 1.0;
+        float d = length(xy);
+        if (d < 1.0) { uv = Distort(xy); }
 
         vec4 colour = texture2D(texture_2d, uv);
-        // vec3 c = vec3(d_1, 0., 0.);
-        // colour = vec4(c, 1.);
         gl_FragColor = colour;
       }`;
 
