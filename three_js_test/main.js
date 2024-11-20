@@ -1,8 +1,8 @@
 import * as THREE from "three";
 import { addRotate } from "./add_rotate";
 
-// import picture from "/textures/grid_tiny.png";
-import picture from "/textures/earth.jpg";
+import picture from "/textures/grid_tiny.png";
+// import picture from "/textures/earth.jpg";
 
 const textureLoader = new THREE.TextureLoader();
 const texture = textureLoader.load(picture);
@@ -107,8 +107,8 @@ const fragmentShader = `
         vec3 uv3 = uvToSphere(uv);
         vec3 CIRCLE_CENTER_POS_3 = uvToSphere(CIRCLE_CENTER_POS);
 
-        // const vec3 ROTATION = vec3(0.0, 1.4, -1.);
-        const vec3 ROTATION = vec3(0.0, 0., -1.);
+        const vec3 ROTATION = vec3(0.0, PI / 2., 0.);
+        // const vec3 ROTATION = vec3(0.0, 0., 0.);
 
         uv3 = rotateX(uv3, ROTATION.x);
         uv3 = rotateY(uv3, ROTATION.y);
